@@ -17,7 +17,7 @@ public enum NotationSystem
 public class GameData
 {
     public double gold;
-    public double goldPerClick;
+    public float goldPerClick;
     public double goldPerSec;
     public double clickUpgradeCost;
     public double goldPerSecUpgradeCost;
@@ -60,7 +60,7 @@ public class GameManager : MonoBehaviour
 
     // fiyatlar
     private double gold = 0d;
-    private double goldPerClick = 1d;
+    private float goldPerClick = 1f;
     private double goldPerSec = 0d;
     private double clickUpgradeCost = 10d;
     private double goldPerSecUpgradeCost = 20d;
@@ -221,6 +221,7 @@ public class GameManager : MonoBehaviour
     // functionlar
     public void OnClick()
     {
+        Debug.Log("OnClick called"); // Add this line
         gold += goldPerClick;
         UpdateUI();
         DisplayTotalGold();

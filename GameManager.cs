@@ -1,14 +1,48 @@
 using System.Collections;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+public enum NotationSystem
+{
+    Default,
+    Scientific,
+    Engineering,
+    ENotation,
+    Normalized
+}
+
+[Serializable]
+public class GameData
+{
+    public double gold;
+    public double goldPerClick;
+    public double goldPerSec;
+    public double clickUpgradeCost;
+    public double goldPerSecUpgradeCost;
+    public double goldPerSecUpgradeCost1;
+    public double goldPerSecUpgradeCost2;
+    public double goldPerSecUpgradeCost3;
+    public double goldPerSecUpgradeCost4;
+    public double incomeMultiplier;
+    public double incomeUpgradeCost;
+    public double incomeUpgradeCost1;
+    public double incomeUpgradeCost2;
+    public double incomeUpgradeCost3;
+    public double incomeUpgradeCost4;
+}
+
 public class GameManager : MonoBehaviour
 {
+    private NotationSystem notation = NotationSystem.Default;
+    [SerializeField]
+    private Text goldText;
+
     // buttonlar
-    public Text goldText;
     public Text goldPerSecText;
     public Text clickPowerText;
+    public int totalclickPower;
     public Button clickUpgradeButton;
     public Button goldPerSecUpgradeButton;
     public Button goldPerSecUpgradeButton1;
@@ -21,71 +55,167 @@ public class GameManager : MonoBehaviour
     public Button incomeUpgradeButton3;
     public Button incomeUpgradeButton4;
 
-
-
+    // dropdown
+    public Dropdown notationDropdown;
 
     // fiyatlar
-    private float gold = 0f;
-    private float goldPerClick = 1f;
-    private float goldPerSec = 0f;
-    private float clickUpgradeCost = 10f;
-    private float goldPerSecUpgradeCost = 20f;
-    private float goldPerSecUpgradeCost1 = 20f;
-    private float goldPerSecUpgradeCost2 = 20f;
-    private float goldPerSecUpgradeCost3 = 20f;
-    private float goldPerSecUpgradeCost4 = 20f;
-    private float incomeMultiplier = 1f;
-    private float incomeUpgradeCost = 50f;
-    private float incomeUpgradeCost1 = 50f;
-    private float incomeUpgradeCost2 = 50f;
-    private float incomeUpgradeCost3 = 50f;
-    private float incomeUpgradeCost4 = 50f;
+    private double gold = 0d;
+    private double goldPerClick = 1d;
+    private double goldPerSec = 0d;
+    private double clickUpgradeCost = 10d;
+    private double goldPerSecUpgradeCost = 20d;
+    private double goldPerSecUpgradeCost1 = 20d;
+    private double goldPerSecUpgradeCost2 = 20d;
+    private double goldPerSecUpgradeCost3 = 20d;
+    private double goldPerSecUpgradeCost4 = 20d;
+    private double incomeMultiplier = 1d;
+    private double incomeUpgradeCost = 50d;
+    private double incomeUpgradeCost1 = 50d;
+    private double incomeUpgradeCost2 = 50d;
+    private double incomeUpgradeCost3 = 50d;
+    private double incomeUpgradeCost4 = 50d;
 
 
+
+    private void SaveGame()
+    {
+        GameData gameData = new GameData
+        {
+            gold = this.gold,
+            goldPerClick = this.goldPerClick,
+            goldPerSec = this.goldPerSec,
+            clickUpgradeCost = this.clickUpgradeCost,
+            goldPerSecUpgradeCost = this.goldPerSecUpgradeCost,
+            goldPerSecUpgradeCost1 = this.goldPerSecUpgradeCost1,
+            goldPerSecUpgradeCost2 = this.goldPerSecUpgradeCost2,
+            goldPerSecUpgradeCost3 = this.goldPerSecUpgradeCost3,
+            goldPerSecUpgradeCost4 = this.goldPerSecUpgradeCost4,
+            incomeMultiplier = this.incomeMultiplier,
+            incomeUpgradeCost = this.incomeUpgradeCost,
+            incomeUpgradeCost1 = this.incomeUpgradeCost1,
+            incomeUpgradeCost2 = this.incomeUpgradeCost2,
+            incomeUpgradeCost3 = this.incomeUpgradeCost3,
+            incomeUpgradeCost4 = this.incomeUpgradeCost4,
+        };
+
+        PlayerPrefs.SetString("GameData", JsonUtility.ToJson(gameData));
+        PlayerPrefs.Save();
+    }
+
+    private void LoadGame()
+    {
+        if (PlayerPrefs.HasKey("GameData"))
+        {
+            GameData gameData = JsonUtility.FromJson<GameData>(PlayerPrefs.GetString("GameData"));
+
+            gold = gameData.gold;
+            goldPerClick = gameData.goldPerClick;
+            goldPerSec = gameData.goldPerSec;
+            clickUpgradeCost = gameData.clickUpgradeCost;
+            goldPerSecUpgradeCost = gameData.goldPerSecUpgradeCost;
+            goldPerSecUpgradeCost1 = gameData.goldPerSecUpgradeCost1;
+            goldPerSecUpgradeCost2 = gameData.goldPerSecUpgradeCost2;
+            goldPerSecUpgradeCost3 = gameData.goldPerSecUpgradeCost3;
+            goldPerSecUpgradeCost4 = gameData.goldPerSecUpgradeCost4;
+            incomeMultiplier = gameData.incomeMultiplier;
+            incomeUpgradeCost = gameData.incomeUpgradeCost;
+            incomeUpgradeCost1 = gameData.incomeUpgradeCost1;
+            incomeUpgradeCost2 = gameData.incomeUpgradeCost2;
+            incomeUpgradeCost3 = gameData.incomeUpgradeCost3;
+            incomeUpgradeCost4 = gameData.incomeUpgradeCost4;
+        }
+    }
+
+
+    private void OnApplicationFocus(bool hasFocus)
+    {
+        if (!hasFocus)
+        {
+            SaveGame();
+        }
+    }
 
     private void Start()
     {
+        LoadGame();
+
         InvokeRepeating("IncreaseGoldPerSec", 0.0f, 1.0f);
+
+        // Add an event listener to the dropdown
+        notationDropdown.onValueChanged.AddListener(delegate {
+            OnDropdownValueChanged(notationDropdown);
+        });
+    }
+
+
+    public void OnDropdownValueChanged(Dropdown change)
+    {
+        notation = (NotationSystem)change.value;
         UpdateUI();
     }
 
     private void Update()
     {
-        gold += goldPerSec * Time.deltaTime;
         UpdateUI();
     }
 
     // ekranda görünen sayılar
     private void UpdateUI()
     {
-        // Scientific notation with 2 decimal places
-        string goldScientific = gold.ToString("0.00E+00");
+        if (notation == NotationSystem.Default) // Default Notation
+        {
+            goldText.text = $"Gold: {gold.ToString("N0")}";
+        }
+        else if (notation == NotationSystem.Scientific) // Scientific Notation
+        {
+            goldText.text = $"Gold: {gold.ToString("0.###E+0")}";
+        }
+        else if (notation == NotationSystem.Engineering) // Engineering Notation
+        {
+            double exponent = Math.Floor(Math.Log10(Math.Abs(gold)) / 3);
+            double mantissa = gold / Math.Pow(10, exponent * 3);
+            goldText.text = $"Gold: {mantissa:0.###}E{(exponent * 3):+#;-#;+0}";
+        }
+        else if (notation == NotationSystem.ENotation) // E Notation
+        {
+            goldText.text = $"Gold: {gold.ToString("N3")}";
+        }
+        else if (notation == NotationSystem.Normalized) // Normalized
+        {
+            goldText.text = $"Gold: {gold.ToString("0.###E+0")}";
+        }
 
-        // Engineering notation with 2 decimal places
-        string goldEngineering = gold.ToString("0.00E+00").Replace("E+0", "E").Replace("E+", "E");
 
-        // e notation with 2 decimal places
-        string goldENotation = gold.ToString("0.00e+00");
 
-        // Normalized notation with 2 decimal places
-        string goldNormalized = gold.ToString("N2");
 
-        goldText.text = "Gold: " + goldScientific + " " + goldEngineering + " " + goldENotation + " " + goldNormalized;
-        goldPerSecText.text = "Gold Per Second: " + Mathf.Ceil(goldPerSec).ToString();
-        clickPowerText.text = "Click Power: " + Mathf.Round(goldPerClick).ToString();
-        clickUpgradeButton.GetComponentInChildren<Text>().text = "Buy Click Upgrade: " + Mathf.Ceil(clickUpgradeCost).ToString();
-        goldPerSecUpgradeButton.GetComponentInChildren<Text>().text = "Buy Gold Per Sec Upgrade: " + Mathf.Ceil(goldPerSecUpgradeCost).ToString();
-        goldPerSecUpgradeButton1.GetComponentInChildren<Text>().text = "Buy Gold Per Sec Upgrade1: " + Mathf.Ceil(goldPerSecUpgradeCost1).ToString();
-        goldPerSecUpgradeButton2.GetComponentInChildren<Text>().text = "Buy Gold Per Sec Upgrade2: " + Mathf.Ceil(goldPerSecUpgradeCost2).ToString();
-        goldPerSecUpgradeButton3.GetComponentInChildren<Text>().text = "Buy Gold Per Sec Upgrade3: " + Mathf.Ceil(goldPerSecUpgradeCost3).ToString();
-        goldPerSecUpgradeButton4.GetComponentInChildren<Text>().text = "Buy Gold Per Sec Upgrade4: " + Mathf.Ceil(goldPerSecUpgradeCost4).ToString();
-        incomeUpgradeButton.GetComponentInChildren<Text>().text = "Upgrade Income: " + incomeUpgradeCost.ToString("F2");
+        goldPerSecText.text = "Gold Per Second: " + Mathf.Ceil((float)goldPerSec).ToString();
+        clickPowerText.text = "Click Power: " + Mathf.Floor((float)totalclickPower).ToString();
+        clickUpgradeButton.GetComponentInChildren<Text>().text = "Buy Click Upgrade: " + Mathf.Ceil((float)clickUpgradeCost).ToString();
+        goldPerSecUpgradeButton.GetComponentInChildren<Text>().text = "Buy Gold Per Sec Upgrade: " + Mathf.Ceil((float)goldPerSecUpgradeCost).ToString();
+        goldPerSecUpgradeButton1.GetComponentInChildren<Text>().text = "Buy Gold Per Sec Upgrade1: " + Mathf.Ceil((float)goldPerSecUpgradeCost1).ToString();
+        goldPerSecUpgradeButton2.GetComponentInChildren<Text>().text = "Buy Gold Per Sec Upgrade2: " + Mathf.Ceil((float)goldPerSecUpgradeCost2).ToString();
+        goldPerSecUpgradeButton3.GetComponentInChildren<Text>().text = "Buy Gold Per Sec Upgrade3: " + Mathf.Ceil((float)goldPerSecUpgradeCost3).ToString();
+        goldPerSecUpgradeButton4.GetComponentInChildren<Text>().text = "Buy Gold Per Sec Upgrade4: " + Mathf.Ceil((float)goldPerSecUpgradeCost4).ToString();
+        incomeUpgradeButton.GetComponentInChildren<Text>().text = "Buy Income Upgrade: " + Mathf.Ceil((float)incomeUpgradeCost).ToString();
+        incomeUpgradeButton1.GetComponentInChildren<Text>().text = "Buy Income Upgrade1: " + Mathf.Ceil((float)incomeUpgradeCost1).ToString();
+        incomeUpgradeButton2.GetComponentInChildren<Text>().text = "Buy Income Upgrade2: " + Mathf.Ceil((float)incomeUpgradeCost2).ToString();
+        incomeUpgradeButton3.GetComponentInChildren<Text>().text = "Buy Income Upgrade3: " + Mathf.Ceil((float)incomeUpgradeCost3).ToString();
+        incomeUpgradeButton4.GetComponentInChildren<Text>().text = "Buy Income Upgrade4: " + Mathf.Ceil((float)incomeUpgradeCost4).ToString();
+      
+
+    }
+
+    public void DisplayTotalGold()
+    {
+        double gold = this.gold;
+        Debug.Log("Total Gold: " + gold);
     }
 
 
     private void IncreaseGoldPerSec()
     {
-        gold += goldPerSec * incomeMultiplier;
+        gold += goldPerSec;
+        UpdateUI();
     }
 
     // functionlar
@@ -93,12 +223,14 @@ public class GameManager : MonoBehaviour
     {
         gold += goldPerClick;
         UpdateUI();
+        DisplayTotalGold();
     }
 
     public void BuyClickUpgrade()
     {
         if (gold >= clickUpgradeCost)
         {
+            totalclickPower++;
             gold -= clickUpgradeCost;
             goldPerClick *= 1.07f;
             clickUpgradeCost *= 1.1f;
@@ -171,7 +303,6 @@ public class GameManager : MonoBehaviour
             UpdateUI();
         }
 
-        void UpgradeIncome()
         {
             goldPerSec += 0.5f;
             UpdateUI();
@@ -188,7 +319,6 @@ public class GameManager : MonoBehaviour
             UpdateUI();
         }
 
-        void UpgradeIncome()
         {
             goldPerSec += 0.5f;
             UpdateUI();
@@ -205,7 +335,6 @@ public class GameManager : MonoBehaviour
             UpdateUI();
         }
 
-        void UpgradeIncome()
         {
             goldPerSec += 0.5f;
             UpdateUI();
@@ -221,7 +350,6 @@ public class GameManager : MonoBehaviour
             UpdateUI();
         }
 
-        void UpgradeIncome()
         {
             goldPerSec += 0.5f;
             UpdateUI();
@@ -237,11 +365,9 @@ public class GameManager : MonoBehaviour
             UpdateUI();
         }
 
-        void UpgradeIncome()
         {
             goldPerSec += 0.5f;
             UpdateUI();
         }
     }
-
 }

@@ -1,9 +1,18 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System;
+using System.Collections;
+
 
 public class gameManager : MonoBehaviour
 {
+    //otomasyon
+    private bool isUnit1AutoActive = false, isUnit2AutoActive = false;
+    public float autoIncomeInterval1 = 1f, autoIncomeInterval2 = 5f;
+    public double autoIncome1Cost = 500; // Otomatik gelir 1'in maliyeti
+    public double autoIncome2Cost = 1000; // Otomatik gelir 2'nin maliyeti
+
+
     // Part 1 info
     public Text coinsText;
 
@@ -74,6 +83,7 @@ public class gameManager : MonoBehaviour
         Application.targetFrameRate = 60;
         Load();
     }
+
     public void Load()
     {
         unit1CostStart = 25;
@@ -97,6 +107,63 @@ public class gameManager : MonoBehaviour
         PlayerPrefs.SetString("unit2Count", unit2Count.ToString());
 
     }
+
+    //otomasyon
+    IEnumerator GenerateIncome(int unit, float interval)
+    {
+        yield return new WaitForSeconds(interval);
+
+        switch (unit)
+        {
+            case 1:
+                coins += Unit1Power();
+                break;
+            case 2:
+                coins += Unit2Power();
+                break;
+        }
+    }
+
+    public void ActivateUnit1AutoIncome()
+    {
+        isUnit1AutoActive = true;
+    }
+
+    public void DeactivateUnit1AutoIncome()
+    {
+        isUnit1AutoActive = false;
+    }
+
+    public void ActivateUnit2AutoIncome()
+    {
+        isUnit2AutoActive = true;
+    }
+
+    public void DeactivateUnit2AutoIncome()
+    {
+        isUnit2AutoActive = false;
+    }
+ 
+    public void PurchaseAutoIncome1()
+    {
+        if (coins >= autoIncome1Cost)
+        {
+            coins -= autoIncome1Cost;
+            ActivateUnit1AutoIncome();
+        }
+    }
+
+    public void PurchaseAutoIncome2()
+    {
+        if (coins >= autoIncome2Cost)
+        {
+            coins -= autoIncome2Cost;
+            ActivateUnit2AutoIncome();
+        }
+    }
+
+
+
     // Update is called once per frame
     public void Update()
     {
@@ -113,6 +180,19 @@ public class gameManager : MonoBehaviour
         unit2Text.text = "Unit Count: " + unit2Count.ToString("F0") + "\nNext Price: " + Unit2Cost().ToString("F0") + "coins\nClick Power: " + Unit2Power().ToString("F0") + "coins\nPower Per Unite: " + unit2PowerPU.ToString("F0");
         Save();
         //coins += coinsPerSecond * Time.deltaTime;
+
+
+        //otomasyon
+        if (isUnit1AutoActive)
+        {
+            StartCoroutine(GenerateIncome(1, autoIncomeInterval1));
+        }
+
+        if (isUnit2AutoActive)
+        {
+            StartCoroutine(GenerateIncome(2, autoIncomeInterval2));
+        }
+
     }
 
 

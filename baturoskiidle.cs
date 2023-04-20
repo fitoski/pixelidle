@@ -1,13 +1,20 @@
-//calisan son vers
-
 using UnityEngine;
 using UnityEngine.UI;
 using System;
+using System.Collections;
+
+
+
 public class gameManager : MonoBehaviour
 {
-    public Slider progressBar;
+    public Image progressBarBackground;
+    public Image progressBarFill;
     private float progressTime = 0f;
     private float progressDuration = 5f;
+    public float unit1FillTime = 5f;
+    private bool isFillingProgressBar = false;
+    public GameObject offlineEarningsPanel;
+    public Text offlineEarningsText;
 
     // Part 1 info
     public Text coinsText;
@@ -79,7 +86,16 @@ public class gameManager : MonoBehaviour
     {
         Application.targetFrameRate = 60;
         Load();
+        progressBarFill.fillAmount = 0f;
+        CalculateOfflineEarnings();
     }
+
+    public void OnApplicationQuit()
+    {
+        Save();
+        PlayerPrefs.SetString("lastQuitTime", DateTime.UtcNow.ToString()); 
+    }
+
     public void Load()
     {
         unit1CostStart = 25;
@@ -96,6 +112,13 @@ public class gameManager : MonoBehaviour
         //unit2CoinsPerSecond = double.Parse(PlayerPrefs.GetString("unit2CoinsPerSecond", "0"));
         isAuto1 = bool.Parse(PlayerPrefs.GetString("isAuto1"));
         isAuto2 = bool.Parse(PlayerPrefs.GetString("isAuto2"));
+
+        if (PlayerPrefs.HasKey("lastQuitTime"))
+        {
+            DateTime lastQuitTime = DateTime.Parse(PlayerPrefs.GetString("lastQuitTime"));
+            TimeSpan timePassed = DateTime.UtcNow - lastQuitTime;
+            PlayerPrefs.SetString("timePassed", timePassed.ToString());
+        }
 
     }
     public void Save()
@@ -117,15 +140,10 @@ public class gameManager : MonoBehaviour
         unit1Text.text = "Unit Count: " + unit1Count.ToString("F0") + "\nNext Price: " + Unit1Cost().ToString("F0") + "coins\nClick Power: " + Unit1Power().ToString("F0") + "coins\nPower Per Unite: " + unit1PowerPU.ToString("F0");
         unit2Text.text = "Unit Count: " + unit2Count.ToString("F0") + "\nNext Price: " + Unit2Cost().ToString("F0") + "coins\nClick Power: " + Unit2Power().ToString("F0") + "coins\nPower Per Unite: " + unit2PowerPU.ToString("F0");
         Save();
-        if (isAuto1 == true)
+        if (isAuto1 == true && !isFillingProgressBar)
         {
             unit1Click();
         }
-        if (isAuto2 == true)
-        {
-            unit2Click();
-        }
-        //coins += coinsPerSecond * Time.deltaTime;
     }
 
     public void autoToggle1()
@@ -151,7 +169,7 @@ public class gameManager : MonoBehaviour
         if (!isFillingProgressBar)
         {
             isFillingProgressBar = true;
-            //coins += Unit1Power();
+            StartCoroutine(FillProgressBar(progressBarFill, unit1FillTime));
         }
     }
 
@@ -167,6 +185,53 @@ public class gameManager : MonoBehaviour
     public void unit2Click()
     {
         coins += Unit2Power();
+    }
+
+    private IEnumerator FillProgressBar(Image progressBar, float fillTime)
+    {
+        float fillAmount = 0f;
+
+        while (fillAmount < 1f)
+        {
+            fillAmount += Time.deltaTime / fillTime;
+            progressBar.fillAmount = fillAmount;
+            yield return null;
+        }
+
+        coins += Unit1Power();
+        isFillingProgressBar = false;
+    }
+
+    private void CalculateOfflineEarnings()
+    {
+        if (PlayerPrefs.HasKey("timePassed"))
+        {
+            TimeSpan timePassed = TimeSpan.Parse(PlayerPrefs.GetString("timePassed"));
+            double autoEarnings = 0;
+
+            if (isAuto1)
+            {
+                autoEarnings += Unit1Power() * timePassed.TotalSeconds;
+            }
+            if (isAuto2)
+            {
+                autoEarnings += Unit2Power() * timePassed.TotalSeconds;
+            }
+
+            coins += autoEarnings;
+
+            ShowOfflineEarnings(autoEarnings);
+        }
+    }
+    private void ShowOfflineEarnings(double earnings)
+    {
+        offlineEarningsPanel.SetActive(true);
+        offlineEarningsText.text = "Offline Earnings: " + earnings.ToString("F0") + " coins";
+    }
+
+    public void CloseOfflineEarningsPanel() 
+    {
+        offlineEarningsPanel.SetActive(false);
     }
 
 }

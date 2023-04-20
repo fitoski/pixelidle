@@ -15,6 +15,11 @@ public class gameManager : MonoBehaviour
     private bool isFillingProgressBar = false;
     public GameObject offlineEarningsPanel;
     public Text offlineEarningsText;
+    public double prestigePoints;
+    public double prestigeMultiplier;
+    public double prestigePointMultiplier = 1.1;
+    public double prestigePointThreshold = 1000;
+    public Text prestigePointsText;
 
     // Part 1 info
     public Text coinsText;
@@ -98,18 +103,17 @@ public class gameManager : MonoBehaviour
 
     public void Load()
     {
-        unit1CostStart = 25;
+        prestigePoints = double.Parse(PlayerPrefs.GetString("prestigePoints", "0"));
+        prestigeMultiplier = double.Parse(PlayerPrefs.GetString("prestigeMultiplier", "1"));
+        unit1CostStart = 25 * prestigeMultiplier;
         unit1PowerPU = 1;
         unit1CostMultply = 1.1;
-        unit2CostStart = 100;
+        unit2CostStart = 100 * prestigeMultiplier;
         unit2PowerPU = 5;
         unit2CostMultply = 1.12;
         coins = double.Parse(PlayerPrefs.GetString("coins", "0"));
-        //coinsPerSecond = double.Parse(PlayerPrefs.GetString("coinsPerSecond", "0"));
         unit1Count = double.Parse(PlayerPrefs.GetString("unit1Count", "1"));
-        //unit1CoinsPerSecond = double.Parse(PlayerPrefs.GetString("unit1CoinsPerSecond", "0"));
         unit2Count = double.Parse(PlayerPrefs.GetString("unit2Count", "0"));
-        //unit2CoinsPerSecond = double.Parse(PlayerPrefs.GetString("unit2CoinsPerSecond", "0"));
         isAuto1 = bool.Parse(PlayerPrefs.GetString("isAuto1"));
         isAuto2 = bool.Parse(PlayerPrefs.GetString("isAuto2"));
 
@@ -119,8 +123,8 @@ public class gameManager : MonoBehaviour
             TimeSpan timePassed = DateTime.UtcNow - lastQuitTime;
             PlayerPrefs.SetString("timePassed", timePassed.ToString());
         }
-
     }
+
     public void Save()
     {
         PlayerPrefs.SetString("coins", coins.ToString());
@@ -128,7 +132,8 @@ public class gameManager : MonoBehaviour
         PlayerPrefs.SetString("unit2Count", unit2Count.ToString());
         PlayerPrefs.SetString("isAuto1", isAuto1.ToString());
         PlayerPrefs.SetString("isAuto2", isAuto2.ToString());
-
+        PlayerPrefs.SetString("prestigePoints", prestigePoints.ToString());
+        PlayerPrefs.SetString("prestigeMultiplier", prestigeMultiplier.ToString());
     }
 
     // Update is called once per frame
@@ -139,6 +144,8 @@ public class gameManager : MonoBehaviour
         //coinsPerSecText.text = coinsPerSecond.ToString("F0") + " coins/s";
         unit1Text.text = "Unit Count: " + unit1Count.ToString("F0") + "\nNext Price: " + Unit1Cost().ToString("F0") + "coins\nClick Power: " + Unit1Power().ToString("F0") + "coins\nPower Per Unite: " + unit1PowerPU.ToString("F0");
         unit2Text.text = "Unit Count: " + unit2Count.ToString("F0") + "\nNext Price: " + Unit2Cost().ToString("F0") + "coins\nClick Power: " + Unit2Power().ToString("F0") + "coins\nPower Per Unite: " + unit2PowerPU.ToString("F0");
+        prestigePointsText.text = "Prestige Points: " + prestigePoints.ToString("F0") + "\nPrestige Multiplier: " + prestigeMultiplier.ToString("F0");
+
         Save();
         if (isAuto1 == true && !isFillingProgressBar)
         {
@@ -232,6 +239,29 @@ public class gameManager : MonoBehaviour
     public void CloseOfflineEarningsPanel() 
     {
         offlineEarningsPanel.SetActive(false);
+    }
+
+    public void Prestige()
+    {
+        if (coins >= prestigePointThreshold)
+        {
+            double prestigePointsGained = coins * prestigePointMultiplier;
+            prestigePoints += prestigePointsGained;
+            prestigeMultiplier += prestigePointsGained;
+            coins = 0;
+            unit1Count = 1;
+            unit2Count = 0;
+            unit1CostStart = 25 * prestigeMultiplier;
+            unit2CostStart = 100 * prestigeMultiplier;
+            PlayerPrefs.SetString("prestigePoints", prestigePoints.ToString());
+            PlayerPrefs.SetString("prestigeMultiplier", prestigeMultiplier.ToString());
+        }
+    }
+
+    public void ResetGame()
+    {
+        PlayerPrefs.DeleteAll();
+        Load();
     }
 
 }

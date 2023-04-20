@@ -1,17 +1,11 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System;
-using System.Collections;
-
-
 public class gameManager : MonoBehaviour
 {
-    //otomasyon
-    private bool isUnit1AutoActive = false, isUnit2AutoActive = false;
-    public float autoIncomeInterval1 = 1f, autoIncomeInterval2 = 5f;
-    public double autoIncome1Cost = 500; // Otomatik gelir 1'in maliyeti
-    public double autoIncome2Cost = 1000; // Otomatik gelir 2'nin maliyeti
-
+    public Slider progressBar;
+    private float progressTime = 0f;
+    private float progressDuration = 5f;
 
     // Part 1 info
     public Text coinsText;
@@ -27,7 +21,8 @@ public class gameManager : MonoBehaviour
 
 
     public Text unit1Text;
-
+    public bool isAuto1 = false;
+    public bool isAuto2 = false;
     //public Text unit1CoinsPerSecondText;
 
     public double unit1CostStart;
@@ -83,7 +78,6 @@ public class gameManager : MonoBehaviour
         Application.targetFrameRate = 60;
         Load();
     }
-
     public void Load()
     {
         unit1CostStart = 25;
@@ -98,6 +92,8 @@ public class gameManager : MonoBehaviour
         //unit1CoinsPerSecond = double.Parse(PlayerPrefs.GetString("unit1CoinsPerSecond", "0"));
         unit2Count = double.Parse(PlayerPrefs.GetString("unit2Count", "0"));
         //unit2CoinsPerSecond = double.Parse(PlayerPrefs.GetString("unit2CoinsPerSecond", "0"));
+        isAuto1 = bool.Parse(PlayerPrefs.GetString("isAuto1"));
+        isAuto2 = bool.Parse(PlayerPrefs.GetString("isAuto2"));
 
     }
     public void Save()
@@ -105,96 +101,39 @@ public class gameManager : MonoBehaviour
         PlayerPrefs.SetString("coins", coins.ToString());
         PlayerPrefs.SetString("unit1Count", unit1Count.ToString());
         PlayerPrefs.SetString("unit2Count", unit2Count.ToString());
+        PlayerPrefs.SetString("isAuto1", isAuto1.ToString());
+        PlayerPrefs.SetString("isAuto2", isAuto2.ToString());
 
     }
-
-    //otomasyon
-    IEnumerator GenerateIncome(int unit, float interval)
-    {
-        yield return new WaitForSeconds(interval);
-
-        switch (unit)
-        {
-            case 1:
-                coins += Unit1Power();
-                break;
-            case 2:
-                coins += Unit2Power();
-                break;
-        }
-    }
-
-    public void ActivateUnit1AutoIncome()
-    {
-        isUnit1AutoActive = true;
-    }
-
-    public void DeactivateUnit1AutoIncome()
-    {
-        isUnit1AutoActive = false;
-    }
-
-    public void ActivateUnit2AutoIncome()
-    {
-        isUnit2AutoActive = true;
-    }
-
-    public void DeactivateUnit2AutoIncome()
-    {
-        isUnit2AutoActive = false;
-    }
- 
-    public void PurchaseAutoIncome1()
-    {
-        if (coins >= autoIncome1Cost)
-        {
-            coins -= autoIncome1Cost;
-            ActivateUnit1AutoIncome();
-        }
-    }
-
-    public void PurchaseAutoIncome2()
-    {
-        if (coins >= autoIncome2Cost)
-        {
-            coins -= autoIncome2Cost;
-            ActivateUnit2AutoIncome();
-        }
-    }
-
-
 
     // Update is called once per frame
     public void Update()
     {
         // coinsPerSecond = unit1Level;
-
-
-
-
         coinsText.text = "Coins: " + coins.ToString("F0");
-
         //coinsPerSecText.text = coinsPerSecond.ToString("F0") + " coins/s";
-
         unit1Text.text = "Unit Count: " + unit1Count.ToString("F0") + "\nNext Price: " + Unit1Cost().ToString("F0") + "coins\nClick Power: " + Unit1Power().ToString("F0") + "coins\nPower Per Unite: " + unit1PowerPU.ToString("F0");
         unit2Text.text = "Unit Count: " + unit2Count.ToString("F0") + "\nNext Price: " + Unit2Cost().ToString("F0") + "coins\nClick Power: " + Unit2Power().ToString("F0") + "coins\nPower Per Unite: " + unit2PowerPU.ToString("F0");
         Save();
+        if (isAuto1 == true)
+        {
+            unit1Click();
+        }
+        if (isAuto2 == true)
+        {
+            unit2Click();
+        }
         //coins += coinsPerSecond * Time.deltaTime;
-
-
-        //otomasyon
-        if (isUnit1AutoActive)
-        {
-            StartCoroutine(GenerateIncome(1, autoIncomeInterval1));
-        }
-
-        if (isUnit2AutoActive)
-        {
-            StartCoroutine(GenerateIncome(2, autoIncomeInterval2));
-        }
-
     }
 
+    public void autoToggle1()
+    {
+        isAuto1 = !isAuto1;
+    }
+    public void autoToggle2()
+    {
+        isAuto2 = !isAuto2;
+    }
 
     public void unit1Buy()
     {
@@ -207,7 +146,11 @@ public class gameManager : MonoBehaviour
 
     public void unit1Click()
     {
-        coins += Unit1Power();
+        if (!isFillingProgressBar)
+        {
+            isFillingProgressBar = true;
+            //coins += Unit1Power();
+        }
     }
 
     public void unit2Buy()

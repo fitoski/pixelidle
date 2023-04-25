@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 
 
 
@@ -9,8 +10,6 @@ public class gameManager : MonoBehaviour
 {
     public Image progressBarBackground;
     public Image progressBarFill;
-    private float progressTime = 0f;
-    private float progressDuration = 5f;
     public float unit1FillTime = 5f;
     private bool isFillingProgressBar = false;
     public GameObject offlineEarningsPanel;
@@ -20,6 +19,8 @@ public class gameManager : MonoBehaviour
     public double prestigePointMultiplier = 1.1;
     public double prestigePointThreshold = 1000;
     public Text prestigePointsText;
+    private double coinMultiplier = 1;
+    private DateTime doubleCoinsEndTime;
 
     // Part 1 info
     public Text coinsText;
@@ -86,19 +87,19 @@ public class gameManager : MonoBehaviour
         return unit2CostStart * Math.Pow(unit2CostMultply, unit2Count);
     }
 
-    // Start is called before the first frame update
     public void Start()
     {
         Application.targetFrameRate = 60;
         Load();
         progressBarFill.fillAmount = 0f;
         CalculateOfflineEarnings();
+
     }
 
     public void OnApplicationQuit()
     {
         Save();
-        PlayerPrefs.SetString("lastQuitTime", DateTime.UtcNow.ToString()); 
+        PlayerPrefs.SetString("lastQuitTime", DateTime.UtcNow.ToString());
     }
 
     public void Load()
@@ -136,9 +137,13 @@ public class gameManager : MonoBehaviour
         PlayerPrefs.SetString("prestigeMultiplier", prestigeMultiplier.ToString());
     }
 
-    // Update is called once per frame
     public void Update()
     {
+        if (coinMultiplier == 2 && DateTime.UtcNow > doubleCoinsEndTime)
+        {
+            coinMultiplier = 1;
+        }
+
         // coinsPerSecond = unit1Level;
         coinsText.text = "Coins: " + coins.ToString("F0");
         //coinsPerSecText.text = coinsPerSecond.ToString("F0") + " coins/s";
@@ -151,6 +156,10 @@ public class gameManager : MonoBehaviour
         {
             unit1Click();
         }
+
+        
+
+
     }
 
     public void autoToggle1()
@@ -191,7 +200,7 @@ public class gameManager : MonoBehaviour
     }
     public void unit2Click()
     {
-        coins += Unit2Power();
+        coins += Unit2Power() * coinMultiplier;
     }
 
     private IEnumerator FillProgressBar(Image progressBar, float fillTime)
@@ -205,7 +214,7 @@ public class gameManager : MonoBehaviour
             yield return null;
         }
 
-        coins += Unit1Power();
+        coins += Unit1Power() * coinMultiplier;
         isFillingProgressBar = false;
     }
 
@@ -225,18 +234,19 @@ public class gameManager : MonoBehaviour
                 autoEarnings += Unit2Power() * timePassed.TotalSeconds;
             }
 
-            coins += autoEarnings;
+            coins += autoEarnings * coinMultiplier;
 
             ShowOfflineEarnings(autoEarnings);
         }
     }
+
     private void ShowOfflineEarnings(double earnings)
     {
         offlineEarningsPanel.SetActive(true);
         offlineEarningsText.text = "Offline Earnings: " + earnings.ToString("F0") + " coins";
     }
 
-    public void CloseOfflineEarningsPanel() 
+    public void CloseOfflineEarningsPanel()
     {
         offlineEarningsPanel.SetActive(false);
     }
@@ -262,6 +272,18 @@ public class gameManager : MonoBehaviour
     {
         PlayerPrefs.DeleteAll();
         Load();
+    }
+
+    public void ActivateDoubleCoinsForHours(int hours)
+    {
+        coinMultiplier = 2;
+        doubleCoinsEndTime = DateTime.UtcNow.AddHours(hours);
+    }
+
+
+    public void AddCoins(int amount)
+    {
+        coins += amount;
     }
 
 }

@@ -88,7 +88,7 @@ public class SimpleQuestSystem : MonoBehaviour
         {
             gameManagerInstance.AddCoins(rewardAmount);
             rewardReadyToClaim = false;
-            StartCoroutine(StartNewQuestWithDelay(1800f)); // Yarım saat sonra yeni görev başlatmak için 1800 saniye gecikme kullanın
+            StartCoroutine(StartNewQuestWithDelay(1800f)); 
         }
     }
 
